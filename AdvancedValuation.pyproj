@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="AdvancedValuation.py" />
     <Compile Include="Enterprise.py" />
+    <Compile Include="ImportWizard.py" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include=".venv\">

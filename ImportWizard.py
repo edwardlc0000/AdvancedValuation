@@ -1,5 +1,6 @@
+#
+
 import pandas as pd
-import wx
 from pathlib import Path
 
 na_values = ['', '#N/A', '#N/A N/A', '#NA',
@@ -8,6 +9,12 @@ na_values = ['', '#N/A', '#N/A N/A', '#NA',
              '<NA>', 'N/A', 'NA', 'NULL',
              'NaN', 'None', 'n/a', 'nan',
              'null']
+
+is_start: int = 9
+is_len: int = 175
+cf_start: int = 185
+cf_len: int = 94
+bs_start: int = 280
 
 # noinspection PyTypeChecker
 def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
@@ -20,8 +27,8 @@ def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
                                              sheet_name="Financial Statements",
                                              index_col=0,
                                              header=0,
-                                             skiprows=9,
-                                             nrows=175,
+                                             skiprows=is_start,
+                                             nrows=is_len,
                                              usecols=range(0, 11),
                                              na_values=na_values)
         case "cf":
@@ -29,8 +36,8 @@ def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
                                              sheet_name="Financial Statements",
                                              index_col=0,
                                              header=0,
-                                             skiprows=185,
-                                             nrows=94,
+                                             skiprows=cf_start,
+                                             nrows=cf_len,
                                              usecols=range(0, 11),
                                              na_values=na_values)
         case "bs":
@@ -38,7 +45,7 @@ def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
                                              sheet_name="Financial Statements",
                                              index_col=0,
                                              header=0,
-                                             skiprows=280,
+                                             skiprows=bs_start,
                                              usecols=range(0, 11),
                                              na_values=na_values)
         case _:

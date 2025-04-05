@@ -55,5 +55,5 @@ def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    test_df = import_statements('is', 'IBM.xlsx')
+    test_df = import_statements('is', '../IBM.xlsx')
     print(test_df.head(10))

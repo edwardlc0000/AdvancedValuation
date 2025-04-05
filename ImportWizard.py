@@ -10,32 +10,9 @@ na_values = ['', '#N/A', '#N/A N/A', '#NA',
              'null']
 
 # noinspection PyTypeChecker
-def import_statements(stmt: str, file_name: str = "") -> pd.DataFrame:
+def import_statements(stmt: str, file_name: str) -> pd.DataFrame:
 
-    if file_name == "":
-        app = wx.App(False)
-
-        dialog = wx.FileDialog(
-            None,
-            "Select a File",
-            wildcard="Excel Files (*.xlsx)|*.xlsx",
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            file_name = dialog.GetPath()
-        else:
-            dialog.Destroy()
-            app.Destroy()
-            raise FileNotFoundError("No file selected.")
-
-        dialog.Destroy()
-        app.Destroy()
-
-        file_path: Path = Path(file_name)
-
-    else:
-        file_path: Path = Path(file_name)
+    file_path: Path = Path(file_name)
 
     match stmt:
         case "is":

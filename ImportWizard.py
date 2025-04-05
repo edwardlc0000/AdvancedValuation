@@ -9,7 +9,9 @@ na_values = ['', '#N/A', '#N/A N/A', '#NA',
              'NaN', 'None', 'n/a', 'nan',
              'null']
 
-def import_statements() -> pd.DataFrame:
+
+# noinspection PyTypeChecker
+def import_statements(stmt: str) -> pd.DataFrame:
 
     app = wx.App(False)
 
@@ -32,17 +34,39 @@ def import_statements() -> pd.DataFrame:
 
     file_path: Path = Path(file_name)
 
-    # noinspection PyTypeChecker
-    df: pd.DataFrame = pd.read_excel(file_path,
-                                     sheet_name="Financial Statements",
-                                     index_col=0,
-                                     header=9,
-                                     usecols=range(0, 11),
-                                     na_values=na_values)
+    match stmt:
+        case "is":
+            df: pd.DataFrame = pd.read_excel(file_path,
+                                             sheet_name="Financial Statements",
+                                             index_col=0,
+                                             header=9,
+                                             skiprows=0,
+                                             nrows=175,
+                                             usecols=range(0, 11),
+                                             na_values=na_values)
+        case "cf":
+            df: pd.DataFrame = pd.read_excel(file_path,
+                                             sheet_name="Financial Statements",
+                                             index_col=0,
+                                             header=0,
+                                             skiprows=185,
+                                             nrows=94,
+                                             usecols=range(0, 11),
+                                             na_values=na_values)
+        case "bs":
+            df: pd.DataFrame = pd.read_excel(file_path,
+                                             sheet_name="Financial Statements",
+                                             index_col=0,
+                                             header=0,
+                                             skiprows=280,
+                                             usecols=range(0, 11),
+                                             na_values=na_values)
+        case _:
+            raise ValueError("Invalid statement type.")
 
     return df
 
 
 if __name__ == "__main__":
-    test_df = import_statements()
+    test_df = import_statements('is')
     print(test_df.head(10))

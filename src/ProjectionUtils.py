@@ -12,6 +12,10 @@ def calc_revenue_growth(revenue:pd.Series) -> np.ndarray:
         revenue_growth (np.ndarray): The revenue growth.
     """
     revenue: np.ndarray = revenue.to_numpy()
+
+    if 0 in revenue:
+        raise ZeroDivisionError("Invalid revenue data. Revenue should not be zero.")
+
     revenue_change: np.ndarray = np.diff(revenue)
     revenue_growth: np.ndarray = revenue_change / revenue[:-1]
     return revenue_growth
@@ -28,6 +32,13 @@ def calc_r_and_d_revenue(revenue: pd.Series, r_and_d: pd.Series) -> np.ndarray:
     """
     revenue: np.ndarray = revenue.to_numpy()
     r_and_d: np.ndarray = r_and_d.to_numpy()
+
+    if 0 in revenue:
+        raise ZeroDivisionError("Invalid revenue data. Revenue should not be zero.")
+
+    if len(revenue) != len(r_and_d):
+        raise IndexError("The length of revenue and R&D data should be the same.")
+
     r_and_d_revenue: np.ndarray = r_and_d[1:] / revenue[1:]
     return r_and_d_revenue
 

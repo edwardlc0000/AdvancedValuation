@@ -23,10 +23,11 @@ class MainWindow(QMainWindow):
 
     def open_file(self):
 
-        parent_dir = os.path.dirname(os.getcwd())
-        file_dialog = QFileDialog()
+        parent_dir: str = os.path.dirname(os.getcwd())
+        file_dialog: QFileDialog = QFileDialog()
         file_dialog.setDirectory(parent_dir)
 
+        file_path: str
         file_path, _ = file_dialog.getOpenFileName(
             self,
             "Open File",

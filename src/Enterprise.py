@@ -1,4 +1,6 @@
-# A class modeling the financial statements of an enterprise
+"""
+A class modeling the financial statements of an enterprise
+"""
 
 import pandas as pd
 import numpy as np

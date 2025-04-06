@@ -1,4 +1,6 @@
-#
+"""
+A class for building an enterprise with financial statements
+"""
 
 import numpy as np
 

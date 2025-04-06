@@ -1,4 +1,7 @@
-#
+"""
+A class for importing financial data from a
+S&P Capital IQ Template file
+"""
 
 import pandas as pd
 from pathlib import Path

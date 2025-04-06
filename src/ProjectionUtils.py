@@ -101,6 +101,45 @@ def calc_da_prior_nppe(da: pd.Series, nppe: pd.Series) -> np.ndarray:
     da_nppe: np.ndarray = da[1:] / nppe[:-1]
     return da_nppe
 
+def calc_nwc_revenue(revenue: pd.Series, cce: pd.Series, ca: pd.Series, cld: pd.Series, cl: pd.Series) -> np.ndarray:
+    """
+
+    """
+    revenue: np.ndarray = revenue.to_numpy()
+    cce: np.ndarray = cce.to_numpy()
+    ca: np.ndarray = ca.to_numpy()
+    cl: np.ndarray = cl.to_numpy()
+    cld: np.ndarray = cld.to_numpy()
+
+    if 0 in revenue:
+        raise ZeroDivisionError("Invalid revenue data. Revenue should not be zero.")
+
+    if len(revenue) != len(cce) or len(revenue) != len(ca) or len(revenue) != len(cl) or len(revenue) != len(cld):
+        raise IndexError("The length of revenue, CCE, CA, and CL data should be the same.")
+
+    nwc: np.ndarray = (ca - cce) - (cl - cld)
+    nwc_revenue: np.ndarray = nwc[1:] / revenue[1:]
+    return nwc_revenue
+
+def calc_net_capex_revenue(revenue: pd.Series, capex: pd.Series, da: pd.Series):
+    """
+
+    """
+    revenue: np.ndarray = revenue.to_numpy()
+    capex: np.ndarray = capex.to_numpy()
+    da: np.ndarray = da.to_numpy()
+
+    if 0 in revenue:
+        raise ZeroDivisionError("Invalid revenue data. Revenue should not be zero.")
+
+    if len(revenue) != len(capex) or len(revenue) != len(da):
+        raise IndexError("The length of revenue, CAPEX, and depreciation and amortization data should be the same.")
+
+    capex = np.multiply(capex, -1.0)
+    net_capex: np.ndarray = capex - da
+    net_capex_revenue: np.ndarray = net_capex[1:] / revenue[1:]
+    return net_capex_revenue
+
 def calc_ucoe(rf: float, rm: float, beta_u: float) -> float:
     """
     Calculate unlevered cost of equity.

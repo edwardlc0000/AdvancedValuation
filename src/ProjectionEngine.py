@@ -1,4 +1,56 @@
 
+import numpy as np
+import pandas as pd
+
+from .Enterprise import Enterprise
+
+class ProjectionEngine:
+    def __init__(self, enterprise: Enterprise):
+        self.correlation_matrix : np.ndarray
+        self.enterprise: Enterprise = enterprise
+
+    def calc_correlation(self) -> None:
+        if (self.enterprise.income_statement.empty or
+            self.enterprise.balance_sheet.empty or
+            self.enterprise.cash_flow_statement.empty):
+            raise ValueError("Cannot calculate correlation with empty data")
+
+        revenue_growth: np.ndarray = calc_revenue_growth(self.enterprise.income_statement.loc['Revenue'])
+        r_and_d_revenue: np.ndarray = calc_r_and_d_revenue(self.enterprise.income_statement.loc['Revenue'],
+                                                          self.enterprise.income_statement.loc['R&D Exp.'])
+        data_matrix: np.ndarray = np.vstack([revenue_growth,
+                                             r_and_d_revenue])
+        self.correlation_matrix = np.corrcoef(data_matrix)
+
+def calc_revenue_growth(revenue:pd.Series) -> np.ndarray:
+    """
+    Calculate revenue growth.
+
+    Parameters:
+        revenue (pd.Series): The revenue data.
+
+    Returns:
+        revenue_growth (np.ndarray): The revenue growth.
+    """
+    revenue: np.ndarray = revenue.to_numpy()
+    revenue_change: np.ndarray = np.diff(revenue)
+    revenue_growth: np.ndarray = revenue_change / revenue[:-1]
+    return revenue_growth
+
+def calc_r_and_d_revenue(revenue: pd.Series, r_and_d: pd.Series) -> np.ndarray:
+    """
+    Calculate the ratio of revenue to R&D.
+
+    Parameters:
+        revenue (pd.Series): The revenue data.
+        r_and_d (pd.Series): The R&D data.
+    Returns:
+        r_and_d_revenue (np.ndarray): The ratio of revenue to R&D.
+    """
+    revenue: np.ndarray = revenue.to_numpy()
+    r_and_d: np.ndarray = r_and_d.to_numpy()
+    r_and_d_revenue: np.ndarray = r_and_d[1:] / revenue[1:]
+    return r_and_d_revenue
 
 def calc_ucoe(rf: float, rm: float, beta_u: float) -> float:
     """

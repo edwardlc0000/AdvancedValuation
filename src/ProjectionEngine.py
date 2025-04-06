@@ -1,6 +1,6 @@
 
 import numpy as np
-import pandas as pd
+from numpy import ndarray, dtype, floating
 
 from .Enterprise import Enterprise
 from .ProjectionUtils import (
@@ -15,6 +15,7 @@ from .ProjectionUtils import (
 )
 
 class ProjectionEngine:
+
     def __init__(self, enterprise: Enterprise):
         self.correlation_matrix : np.ndarray
         self.enterprise: Enterprise = enterprise

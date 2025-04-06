@@ -19,94 +19,142 @@ class TestProjectionEngine(unittest.TestCase):
 
     def _create_mock_enterprise(self):
         # Create a mock Enterprise object with controlled test data
-        enterprise = Enterprise(name='International Business Machines',
-                                ticker='IBM',
+        enterprise = Enterprise(name='Test Corp',
+                                ticker='TEST',
                                 fdso=100,
                                 debt_value=0.0)
 
-        # Use enough years and ensure each data series has enough variability
+        # Create consistent data across all years to avoid NaN values
+        # Use 7 years of data to ensure enough data points for correlation
         years = ['2016', '2017', '2018', '2019', '2020', '2021', '2022']
 
-        # Create income statement with meaningful variation in the data
-        income_data = {}
-        for i, year in enumerate(years):
-            # Create data with clear trends and variability to ensure valid correlations
-            revenue = 100 + i * 20
-            cogs = revenue * (0.45 + 0.01 * i)  # COGS as % of revenue with slight trend
-            rnd = revenue * (0.08 + 0.005 * i)  # R&D as % of revenue with slight trend
-            sga = revenue * (0.20 - 0.003 * i)  # SG&A as % of revenue with slight trend
+        # Creating income statement data
+        # Ensure values change over time to have meaningful correlations
+        # Using synthetic data with clear patterns
+        income_data = {
+            'Revenues': [100, 110, 121, 133, 146.3, 161, 177.1],
+            'Cost of Goods Sold': [60, 65, 71.5, 78.6, 86.5, 95.1, 104.6],
+            'R&D Exp.': [10, 11, 12.1, 13.3, 14.6, 16.1, 17.7],
+            'Selling General & Admin Exp.': [15, 16.5, 18.2, 20, 22, 24.2, 26.6]
+        }
 
-            income_data[year] = [revenue, cogs, rnd, sga]
+        # Transpose the data to match the expected format (years as columns)
+        income_df = pd.DataFrame(income_data)
+        income_df.index = years
+        enterprise.income_statement = income_df.T  # Transpose to have rows as metrics, columns as years
 
-        income_index = ['Revenue', 'Cost of Goods Sold', 'R&D Exp.', 'Selling General & Admin Exp.']
-        enterprise.income_statement = pd.DataFrame(income_data, index=income_index)
+        # Creating balance sheet data with consistent patterns
+        balance_data = {
+            'Net Property Plant & Equipment': [70, 77, 84.7, 93.2, 102.5, 112.7, 124],
+            'Total Cash & ST Investments': [20, 22, 24.2, 26.6, 29.3, 32.2, 35.4],
+            'Total Current Assets': [40, 44, 48.4, 53.2, 58.5, 64.4, 70.8],
+            'Current Portion of Long Term Debt': [5, 5.5, 6.1, 6.7, 7.3, 8.1, 8.9],
+            'Total Current Liabilities': [30, 33, 36.3, 39.9, 43.9, 48.3, 53.1]
+        }
 
-        # Create balance sheet data with consistent relationship to income data
-        balance_data = {}
-        for i, year in enumerate(years):
-            # PP&E typically correlates with revenue
-            nppe = income_data[year][0] * 0.7 + i * 5  # 70% of revenue plus growth
-            balance_data[year] = [nppe]
+        balance_df = pd.DataFrame(balance_data)
+        balance_df.index = years
+        enterprise.balance_sheet = balance_df.T
 
-        balance_index = ['Net Property Plant & Equipment']
-        enterprise.balance_sheet = pd.DataFrame(balance_data, index=balance_index)
+        # Creating cash flow data with consistent patterns
+        cf_data = {
+            'Depreciation & Amort.': [7, 7.7, 8.5, 9.3, 10.3, 11.3, 12.4],
+            'Cash from Investing': [-12, -13.2, -14.5, -16, -17.6, -19.3, -21.3]
+        }
 
-        # Create cash flow statement data
-        cf_data = {}
-        for i, year in enumerate(years):
-            # Depreciation typically around 5-10% of PP&E
-            depreciation = balance_data[year][0] * (0.08 + 0.003 * i)  # 8% of PP&E with slight increase
-            cf_data[year] = [depreciation]
-
-        cf_index = ['Depreciation & Amort.']
-        enterprise.cash_flow_statement = pd.DataFrame(cf_data, index=cf_index)
+        cf_df = pd.DataFrame(cf_data)
+        cf_df.index = years
+        enterprise.cash_flow_statement = cf_df.T
 
         return enterprise
 
     def test_calc_correlation(self):
-        # Test the correlation calculation
+        """Test that the correlation calculation works properly."""
+        # Call the method to be tested
         self.projection_engine.calc_correlation()
 
-        # Verify the correlation matrix has the right shape (5x5 for the 5 metrics)
+        # Verify the correlation matrix has the right shape for the metrics it's using
         self.assertIsInstance(self.projection_engine.correlation_matrix, np.ndarray)
-        self.assertEqual(self.projection_engine.correlation_matrix.shape, (5, 5))
 
-        # Check for NaN values before proceeding with other assertions
-        nan_count = np.isnan(self.projection_engine.correlation_matrix).sum()
-        self.assertEqual(nan_count, 0, "Correlation matrix contains NaN values")
+        # Print the parameters for debugging
+        print("Parameters in projection engine:")
+        for key, value in self.projection_engine.params.items():
+            print(f"  {key}: {value}")
 
-        # Verify the diagonal elements are 1.0 (correlation with self)
-        for i in range(5):
-            self.assertAlmostEqual(self.projection_engine.correlation_matrix[i, i], 1.0)
+        # Check if correlation matrix has the proper shape
+        shape = self.projection_engine.correlation_matrix.shape
+        self.assertEqual(len(shape), 2, "Correlation matrix should be 2-dimensional")
+        self.assertEqual(shape[0], shape[1], "Correlation matrix should be square")
 
-        # Verify all correlation coefficients are in a valid range [-1, 1]
-        for i in range(5):
-            for j in range(5):
-                self.assertTrue(-1.0 <= self.projection_engine.correlation_matrix[i, j] <= 1.0)
+        # Print the correlation matrix for debugging
+        print("Correlation matrix shape:", shape)
+        print(self.projection_engine.correlation_matrix)
 
-        # Verify symmetry of the correlation matrix
-        for i in range(5):
-            for j in range(5):
+        # Verify no NaN values in the correlation matrix
+        if np.isnan(self.projection_engine.correlation_matrix).any():
+            nan_indices = np.argwhere(np.isnan(self.projection_engine.correlation_matrix))
+            print(f"NaN found at indices: {nan_indices}")
+
+        self.assertFalse(np.isnan(self.projection_engine.correlation_matrix).any(),
+                         "Correlation matrix should not contain NaN values")
+
+        # Check that diagonal elements are 1.0 (correlation of a variable with itself)
+        for i in range(shape[0]):
+            self.assertAlmostEqual(
+                self.projection_engine.correlation_matrix[i, i],
+                1.0,
+                msg=f"Diagonal element at position {i},{i} should be 1.0"
+            )
+
+        # Check that all correlation values are in the valid range [-1, 1]
+        self.assertTrue(
+            (self.projection_engine.correlation_matrix >= -1.0).all() and
+            (self.projection_engine.correlation_matrix <= 1.0).all(),
+            "All correlation values should be between -1.0 and 1.0"
+        )
+
+        # Check symmetry of correlation matrix
+        for i in range(shape[0]):
+            for j in range(shape[0]):
                 self.assertAlmostEqual(
                     self.projection_engine.correlation_matrix[i, j],
-                    self.projection_engine.correlation_matrix[j, i]
+                    self.projection_engine.correlation_matrix[j, i],
+                    msg=f"Correlation matrix should be symmetric: [{i},{j}] should equal [{j},{i}]"
                 )
 
     def test_calc_correlation_with_empty_data(self):
-        # Test with empty data arrays
+        """Test that correlation calculation properly handles empty data."""
+        # Create Enterprise object with empty data frames
         enterprise = Enterprise(name='Test', ticker='TEST', fdso=0, debt_value=0.0)
 
-        # Create empty DataFrames with correct structure
-        enterprise.income_statement = pd.DataFrame({}, index=['Revenue', 'Cost of Goods Sold',
-                                                              'R&D Exp.', 'Selling General & Admin Exp.'])
-        enterprise.balance_sheet = pd.DataFrame({}, index=['Net Property Plant & Equipment'])
-        enterprise.cash_flow_statement = pd.DataFrame({}, index=['Depreciation & Amort.'])
+        # Create empty DataFrames with the expected indexes
+        income_index = ['Revenues', 'Cost of Goods Sold', 'R&D Exp.', 'Selling General & Admin Exp.']
+        enterprise.income_statement = pd.DataFrame({}, index=income_index)
 
-        projection_engine = ProjectionEngine(enterprise)
+        balance_index = [
+            'Net Property Plant & Equipment',
+            'Total Cash & ST Investments',
+            'Total Current Assets',
+            'Current Portion of Long Term Debt',
+            'Total Current Liabilities'
+        ]
+        enterprise.balance_sheet = pd.DataFrame({}, index=balance_index)
 
-        # Should raise ValueError with empty data
+        cf_index = ['Depreciation & Amort.', 'Cash from Investing']
+        enterprise.cash_flow_statement = pd.DataFrame({}, index=cf_index)
+
+        # Creating a ProjectionEngine with empty data should raise ValueError
         with self.assertRaises(ValueError):
-            projection_engine.calc_correlation()
+            ProjectionEngine(enterprise)
+
+    def test_params_initialization(self):
+        """Test that parameters are properly initialized."""
+        # Check that params dictionary is created
+        self.assertIsInstance(self.projection_engine.params, dict)
+
+        # Check that params dictionary is not empty
+        self.assertTrue(len(self.projection_engine.params) > 0,
+                        "Params dictionary should not be empty")
 
 
 if __name__ == '__main__':

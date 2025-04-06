@@ -19,7 +19,21 @@ def calc_reinvestment_rate(cap_ex: float,
                            r_and_d: float,
                            change_nwc: float,
                            ebit: float,
-                           tax_rate: float):
+                           tax_rate: float) -> float:
+    """
+    Calculate the reinvestment rate.
+
+    Parameters:
+        cap_ex (float): Capital expenditure.
+        d_and_a (float): Depreciation and amortization.
+        r_and_d (float): Research and development.
+        change_nwc (float): Change in net-working capital.
+        ebit (float): Earnings before interest and taxes.
+        tax_rate (float): The tax rate.
+
+    Returns:
+        float: The reinvestment rate.
+    """
     return ((cap_ex - d_and_a + r_and_d + change_nwc)
             / ((ebit + r_and_d) * (1 - tax_rate)))
 

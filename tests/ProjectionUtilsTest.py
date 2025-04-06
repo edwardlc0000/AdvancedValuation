@@ -4,7 +4,10 @@ import unittest
 
 from src.ProjectionUtils import (
     calc_revenue_growth,
+    calc_cogs_revenue,
+    calc_sga_revenue,
     calc_r_and_d_revenue,
+    calc_da_prior_nppe,
     calc_ucoe,
     calc_reinvestment_rate,
     calc_growth
@@ -35,6 +38,68 @@ class TestCalcRevenueGrowth(unittest.TestCase):
         result = calc_revenue_growth(revenue)
         # Growth should be negative when revenue goes negative
         self.assertTrue(result[0] < 0)
+
+class TestCalcCogsRevenue(unittest.TestCase):
+    def test_typical_case(self):
+        # Test with typical revenue and COGS series
+        revenue = pd.Series([100, 110, 125, 140, 160])
+        cogs = pd.Series([60, 65, 72, 80, 90])
+
+        result = calc_cogs_revenue(revenue, cogs)
+
+        # Expected ratios: 65/110, 72/125, etc.
+        # Assuming implementation similar to calc_r_and_d_revenue
+        expected = np.array([65 / 110, 72 / 125, 80 / 140, 90 / 160])
+
+        self.assertEqual(len(result), len(revenue) - 1)
+        np.testing.assert_almost_equal(result, expected)
+
+    def test_zero_revenue(self):
+        # Test with zero in revenue (should raise ZeroDivisionError)
+        revenue = pd.Series([100, 0, 125])
+        cogs = pd.Series([60, 65, 72])
+        with self.assertRaises(ZeroDivisionError):
+            calc_cogs_revenue(revenue, cogs)
+
+    def test_different_length(self):
+        # Test with different length series
+        revenue = pd.Series([100, 110, 125])
+        cogs = pd.Series([60, 65])
+
+        # This should raise an IndexError since the arrays have different lengths
+        with self.assertRaises(IndexError):
+            calc_cogs_revenue(revenue, cogs)
+
+
+class TestCalcSgaRevenue(unittest.TestCase):
+    def test_typical_case(self):
+        # Test with typical revenue and SGA series
+        revenue = pd.Series([100, 110, 125, 140, 160])
+        sga = pd.Series([20, 22, 24, 26, 30])
+
+        result = calc_sga_revenue(revenue, sga)
+
+        # Expected ratios: 22/110, 24/125, etc.
+        expected = np.array([22 / 110, 24 / 125, 26 / 140, 30 / 160])
+
+        self.assertEqual(len(result), len(revenue) - 1)
+        np.testing.assert_almost_equal(result, expected)
+
+    def test_zero_revenue(self):
+        # Test with zero in revenue (should raise ZeroDivisionError)
+        revenue = pd.Series([100, 0, 125])
+        sga = pd.Series([20, 22, 24])
+        with self.assertRaises(ZeroDivisionError):
+            calc_sga_revenue(revenue, sga)
+
+    def test_different_length(self):
+        # Test with different length series
+        revenue = pd.Series([100, 110, 125])
+        sga = pd.Series([20, 22])
+
+        # This should raise an IndexError since the arrays have different lengths
+        with self.assertRaises(IndexError):
+            calc_sga_revenue(revenue, sga)
 
 class TestCalcRandDRevenue(unittest.TestCase):
     def test_typical_case(self):
@@ -67,6 +132,48 @@ class TestCalcRandDRevenue(unittest.TestCase):
         with self.assertRaises(IndexError):
             calc_r_and_d_revenue(revenue, r_and_d)
 
+class TestCalcDaNppe(unittest.TestCase):
+    def test_typical_case(self):
+        # Test with typical Depreciation & Amortization and NPPE series
+        da = pd.Series([10, 12, 14, 16, 18])
+        nppe = pd.Series([200, 220, 250, 280, 300])
+
+        result = calc_da_prior_nppe(da, nppe)
+
+        # Expected ratios: 12/220, 14/250, etc.
+        expected = np.array([12 / 200, 14 / 220, 16 / 250, 18 / 280])
+
+        self.assertEqual(len(result), len(da) - 1)
+        np.testing.assert_almost_equal(result, expected)
+
+    def test_zero_nppe(self):
+        # Test with zero in NPPE (should raise ZeroDivisionError)
+        da = pd.Series([10, 12, 14])
+        nppe = pd.Series([200, 0, 250])
+        with self.assertRaises(ZeroDivisionError):
+            calc_da_prior_nppe(da, nppe)
+
+    def test_different_length(self):
+        # Test with different length series
+        da = pd.Series([10, 12, 14])
+        nppe = pd.Series([200, 220])
+
+        # This should raise an IndexError since the arrays have different lengths
+        with self.assertRaises(IndexError):
+            calc_da_prior_nppe(da, nppe)
+
+    def test_negative_nppe(self):
+        # Test with negative NPPE (unusual but possible)
+        da = pd.Series([10, 12, 14])
+        nppe = pd.Series([200, -220, 250])
+
+        result = calc_da_prior_nppe(da, nppe)
+
+        # Expected ratio for negative NPPE: 12/(-220), which is negative
+        expected = np.array([12 / (200), 14 / (-220)])
+
+        self.assertEqual(len(result), 2)
+        np.testing.assert_almost_equal(result, expected)
 
 class TestCalcUcoe(unittest.TestCase):
     def test_typical_case(self):

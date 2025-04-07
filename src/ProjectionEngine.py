@@ -92,6 +92,15 @@ class ProjectionEngine:
         self.params['net_capex_revenue_e'] = Parameter(data=net_capex_revenue_e,
                                                        std=self.params['net_capex_revenue_a'].std)
 
+        self.revenues_e: list[list] = []
+        self.cogs_e: list[list]  = []
+        self.sga_e: list[list]  = []
+        self.r_and_d_e: list[list]  = []
+        self.da_e: list[list]  = []
+        self.capex_e: list[list]  = []
+        self.nppe_e: list[list]  = []
+        self.change_nwc_e: list[list]  = []
+
     def calc_correlation(self) -> None:
         if (self.enterprise.income_statement.empty or
             self.enterprise.balance_sheet.empty or
@@ -116,36 +125,76 @@ class ProjectionEngine:
         self.correlation_matrix = np.corrcoef(data_matrix)
 
     def project_stmt(self) -> None:
-        self.project_revenue()
-        self.project_cogs()
-        self.project_sga()
-        self.project_r_and_d()
-        self.project_fixed_assets()
-        self.project_net_working_capital()
+        self.revenues_e.append(self.project_revenue())
+        self.cogs_e.append(self.project_cogs())
+        self.sga_e.append(self.project_sga())
+        self.r_and_d_e.append(self.project_r_and_d())
+        fixed_assets = self.project_fixed_assets()
+        self.da_e.append(fixed_assets[0])
+        self.capex_e.append(fixed_assets[1])
+        self.nppe_e.append(fixed_assets[2])
+        self.change_nwc_e.append(self.project_change_net_working_capital())
 
-    def project_revenue(self) -> None:
-        revenue0: float = self.enterprise.income_statement.loc['Revenues'].index[-1]
+    def project_revenue(self) -> list:
+        iter_rev_e: list = []
+        revenue0: float = self.enterprise.income_statement.loc['Revenues'].iloc[-1]
+
         for growth_rate in self.params['revenue_growth_e'].data:
             revenue = revenue0 * (1 + growth_rate)
-            self.params['revenues_e'].append(revenue)
+            iter_rev_e.append(revenue)
             revenue0 = revenue
 
-    def project_cogs(self) -> None:
-        self.params['cogs_e'] = np.multiply(self.params['revenues_e'].data,
-                                            self.params['cogs_revenue_e'].data)
+        return iter_rev_e
 
-    def project_sga(self) -> None:
-        self.params['sga_e'] = np.multiply(self.params['revenues_e'].data,
-                                           self.params['sga_revenue_e'].data)
+    def project_cogs(self) -> list:
+        iter_cogs_e: list = np.multiply(np.array(self.revenues_e[-1]),
+                                            self.params['cogs_revenue_e'].data).tolist()
+        return iter_cogs_e
 
-    def project_r_and_d(self) -> None:
-        self.params['r_and_d_e'] = np.multiply(self.params['revenues_e'].data,
-                                               self.params['r_and_d_revenue_e'].data)
+    def project_sga(self) -> list:
+        iter_sga_e: list = np.multiply(np.array(self.revenues_e[-1]),
+                                           self.params['sga_revenue_e'].data).tolist()
+        return iter_sga_e
 
-    def project_fixed_assets(self) -> None:
-        self.params['da_e'] = Parameter(np.ndarray(0))
-        self.params['nppe_e'] = Parameter(np.ndarray(0))
-        self.params['capex_e'] = Parameter(np.ndarray(0))
+    def project_r_and_d(self) -> list:
+        iter_r_and_d_e: list = np.multiply(np.array(self.revenues_e[-1]),
+                                               self.params['r_and_d_revenue_e'].data).tolist()
+        return iter_r_and_d_e
 
-    def project_net_working_capital(self) -> None:
-        pass
+    def project_fixed_assets(self) -> tuple[list, list, list]:
+        iter_da_e: list = []
+        iter_capex_e: list = []
+        iter_nppe_e: list = []
+        nppe0: float = self.enterprise.balance_sheet.loc['Net Property Plant & Equipment'].iloc[-1]
+
+        for i, da_ratio in enumerate(self.params['da_nppe_e'].data):
+            da: float = da_ratio * nppe0
+            iter_da_e.append(da)
+
+            net_capex: float = np.multiply(self.params['net_capex_revenue_e'].data[i],
+                                           np.array(self.revenues_e[-1][i]))
+            capex: float = net_capex + da
+            iter_capex_e.append(capex)
+
+            nppe: float = nppe0 - da + capex
+            iter_nppe_e.append(nppe)
+
+            nppe0 = nppe
+
+        return iter_da_e, iter_capex_e, iter_nppe_e
+
+    def project_change_net_working_capital(self) -> list:
+        iter_change_nwc_e: list = []
+        cce0: float = self.enterprise.balance_sheet.loc['Total Cash & ST Investments'].iloc[-1]
+        ca0: float = self.enterprise.balance_sheet.loc['Total Current Assets'].iloc[-1]
+        cld0: float = self.enterprise.balance_sheet.loc['Current Portion of Long Term Debt'].iloc[-1]
+        cl0: float = self.enterprise.balance_sheet.loc['Total Current Liabilities'].iloc[-1]
+        nwc0: float = (ca0 - cce0) - (cl0 - cld0)
+
+        for i, nwc_ratio in enumerate(self.params['nwc_revenue_e'].data):
+            nwc: float = nwc_ratio * self.revenues_e[-1][i]
+            change_nwc: float = nwc - nwc0
+            iter_change_nwc_e.append(change_nwc)
+            nwc0 = nwc
+
+        return iter_change_nwc_e

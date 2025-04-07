@@ -18,7 +18,14 @@ from .ProjectionUtils import (
 
 class ProjectionEngine:
 
-    def __init__(self, enterprise: Enterprise):
+    def __init__(self, enterprise: Enterprise,
+                 revenue_growth_e: np.ndarray = np.ndarray(0),
+                 cogs_revenue_e: np.ndarray = np.ndarray(0),
+                 sga_revenue_e: np.ndarray = np.ndarray(0),
+                 r_and_d_revenue_e: np.ndarray = np.ndarray(0),
+                 da_nppe_e: np.ndarray = np.ndarray(0),
+                 nwc_revenue_e: np.ndarray = np.ndarray(0),
+                 net_capex_revenue_e: np.ndarray = np.ndarray(0)):
         self.correlation_matrix: np.ndarray = None
         self.enterprise: Enterprise = enterprise
         self.params: dict = {}
@@ -70,6 +77,21 @@ class ProjectionEngine:
             except (ValueError, ZeroDivisionError, IndexError) as e:
                 print(f"Warning: Could not calculate {param_name}: {e}")
 
+        self.params['revenue_growth_e'] = Parameter(data=revenue_growth_e,
+                                                    std=self.params['revenue_growth_a'].std)
+        self.params['cogs_revenue_e'] = Parameter(data=cogs_revenue_e,
+                                                  std=self.params['cogs_revenue_a'].std)
+        self.params['r_and_d_revenue_e'] = Parameter(data=r_and_d_revenue_e,
+                                                     std=self.params['r_and_d_revenue_a'].std)
+        self.params['sga_revenue_e'] = Parameter(data=sga_revenue_e,
+                                                 std=self.params['sga_revenue_a'].std)
+        self.params['da_nppe_e'] = Parameter(data=da_nppe_e,
+                                             std=self.params['da_nppe_a'].std)
+        self.params['nwc_revenue_e'] = Parameter(data=nwc_revenue_e,
+                                                 std=self.params['nwc_revenue_a'].std)
+        self.params['net_capex_revenue_e'] = Parameter(data=net_capex_revenue_e,
+                                                       std=self.params['net_capex_revenue_a'].std)
+
     def calc_correlation(self) -> None:
         if (self.enterprise.income_statement.empty or
             self.enterprise.balance_sheet.empty or
@@ -92,3 +114,38 @@ class ProjectionEngine:
                                              nwc_revenue,
                                              net_capex_revenue])
         self.correlation_matrix = np.corrcoef(data_matrix)
+
+    def project_stmt(self) -> None:
+        self.project_revenue()
+        self.project_cogs()
+        self.project_sga()
+        self.project_r_and_d()
+        self.project_fixed_assets()
+        self.project_net_working_capital()
+
+    def project_revenue(self) -> None:
+        revenue0: float = self.enterprise.income_statement.loc['Revenues'].index[-1]
+        for growth_rate in self.params['revenue_growth_e'].data:
+            revenue = revenue0 * (1 + growth_rate)
+            self.params['revenues_e'].append(revenue)
+            revenue0 = revenue
+
+    def project_cogs(self) -> None:
+        self.params['cogs_e'] = np.multiply(self.params['revenues_e'].data,
+                                            self.params['cogs_revenue_e'].data)
+
+    def project_sga(self) -> None:
+        self.params['sga_e'] = np.multiply(self.params['revenues_e'].data,
+                                           self.params['sga_revenue_e'].data)
+
+    def project_r_and_d(self) -> None:
+        self.params['r_and_d_e'] = np.multiply(self.params['revenues_e'].data,
+                                               self.params['r_and_d_revenue_e'].data)
+
+    def project_fixed_assets(self) -> None:
+        self.params['da_e'] = Parameter(np.ndarray(0))
+        self.params['nppe_e'] = Parameter(np.ndarray(0))
+        self.params['capex_e'] = Parameter(np.ndarray(0))
+
+    def project_net_working_capital(self) -> None:
+        pass

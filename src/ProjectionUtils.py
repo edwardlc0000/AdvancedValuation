@@ -19,7 +19,8 @@ def calc_revenue_growth(revenue:pd.Series) -> np.ndarray:
     revenue_growth: np.ndarray = revenue_change / revenue[:-1]
     return revenue_growth
 
-def calc_cogs_revenue(revenue: pd.Series, cogs: pd.Series) -> np.ndarray:
+def calc_cogs_revenue(revenue: pd.Series,
+                      cogs: pd.Series) -> np.ndarray:
     """
 
     """
@@ -35,7 +36,8 @@ def calc_cogs_revenue(revenue: pd.Series, cogs: pd.Series) -> np.ndarray:
     cogs_revenue: np.ndarray = cogs[1:] / revenue[1:]
     return cogs_revenue
 
-def calc_r_and_d_revenue(revenue: pd.Series, r_and_d: pd.Series) -> np.ndarray:
+def calc_r_and_d_revenue(revenue: pd.Series,
+                         r_and_d: pd.Series) -> np.ndarray:
     """
     Calculate the ratio of revenue to R&D.
 
@@ -57,7 +59,8 @@ def calc_r_and_d_revenue(revenue: pd.Series, r_and_d: pd.Series) -> np.ndarray:
     r_and_d_revenue: np.ndarray = r_and_d[1:] / revenue[1:]
     return r_and_d_revenue
 
-def calc_sga_revenue(revenue: pd.Series, sga: pd.Series) -> np.ndarray:
+def calc_sga_revenue(revenue: pd.Series,
+                     sga: pd.Series) -> np.ndarray:
     """
     Calculate the ratio of revenue to SG&A.
 
@@ -79,7 +82,8 @@ def calc_sga_revenue(revenue: pd.Series, sga: pd.Series) -> np.ndarray:
     sga_revenue: np.ndarray = sga[1:] / revenue[1:]
     return sga_revenue
 
-def calc_da_prior_nppe(da: pd.Series, nppe: pd.Series) -> np.ndarray:
+def calc_da_prior_nppe(da: pd.Series,
+                       nppe: pd.Series) -> np.ndarray:
     """
     Calculate the ratio of depreciation and amortization to prior Net-PP&E.
 
@@ -101,7 +105,10 @@ def calc_da_prior_nppe(da: pd.Series, nppe: pd.Series) -> np.ndarray:
     da_nppe: np.ndarray = da[1:] / nppe[:-1]
     return da_nppe
 
-def calc_nwc_revenue(revenue: pd.Series, cce: pd.Series, ca: pd.Series, cld: pd.Series, cl: pd.Series) -> np.ndarray:
+def calc_nwc_revenue(revenue: pd.Series,
+                     cce: pd.Series,
+                     ca: pd.Series, cld: pd.Series,
+                     cl: pd.Series) -> np.ndarray:
     """
 
     """
@@ -121,7 +128,9 @@ def calc_nwc_revenue(revenue: pd.Series, cce: pd.Series, ca: pd.Series, cld: pd.
     nwc_revenue: np.ndarray = nwc[1:] / revenue[1:]
     return nwc_revenue
 
-def calc_net_capex_revenue(revenue: pd.Series, capex: pd.Series, da: pd.Series):
+def calc_net_capex_revenue(revenue: pd.Series,
+                           capex: pd.Series,
+                           da: pd.Series) -> np.ndarray:
     """
 
     """
@@ -140,7 +149,9 @@ def calc_net_capex_revenue(revenue: pd.Series, capex: pd.Series, da: pd.Series):
     net_capex_revenue: np.ndarray = net_capex[1:] / revenue[1:]
     return net_capex_revenue
 
-def calc_ucoe(rf: float, rm: float, beta_u: float) -> float:
+def calc_ucoe(rf: float,
+              rm: float,
+              beta_u: float) -> float:
     """
     Calculate unlevered cost of equity.
 
@@ -175,7 +186,8 @@ def calc_reinvestment_rate(cap_ex: float,
     return ((cap_ex - d_and_a + r_and_d + change_nwc)
             / ((ebit + r_and_d) * (1 - tax_rate)))
 
-def calc_growth(roic: float, reinvestment_rate: float) -> float:
+def calc_growth(roic: float,
+                reinvestment_rate: float) -> float:
     """
     Calculate long-term growth rate.
 

@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>0878e0e1-b55a-49db-bc89-9e7ae2c6c6de</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ImportWizard.py</StartupFile>
+    <StartupFile>src\AdvancedValuation.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

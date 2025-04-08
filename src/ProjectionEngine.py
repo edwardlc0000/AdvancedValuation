@@ -1,5 +1,6 @@
 
 import numpy as np
+from scipy.optimize import root_scalar
 
 from .Enterprise import Enterprise
 from .Parameter import Parameter
@@ -12,6 +13,8 @@ from .ProjectionUtils import (
     calc_nwc_revenue,
     calc_net_capex_revenue,
     calc_ucoe,
+    calc_coe,
+    calc_wacc,
     calc_reinvestment_rate,
     calc_growth
 )
@@ -237,3 +240,36 @@ class ProjectionEngine:
                             -np.array(self.capex_e)
                             -np.array(self.change_nwc_e)).tolist()
         return iter_fcf_e
+
+    def dcf_model(self, rf: float, rm: float, beta_u: float, roic: float) -> None:
+        self.project_stmt()
+        ucoe: float = calc_ucoe(rf, rm, beta_u)
+        cod: float = self.enterprise.cod
+
+        reinvestment_rate: float = calc_reinvestment_rate(self.capex_e[-1][-1],
+                                                          self.da_e[-1][-1],
+                                                          self.r_and_d_e[-1][-1],
+                                                          self.change_nwc_e[-1][-1],
+                                                          self.ebit_e[-1][-1],
+                                                          self.enterprise.stat_tax)
+        growth_rate: float = calc_growth(roic, reinvestment_rate)
+
+        fina_lev = root_scalar(
+            lambda begin_lev: self.lev_difference(begin_lev, ucoe, cod, growth_rate),
+            bracket=[0.0000, 0.9999], method='brentq')
+
+
+    def project_enterprise_value(self) -> float:
+        pass
+
+    def lev_difference(self, begin_lev: float, ucoe: float, cod: float, growth_rate: float) -> float:
+        coe: float = calc_coe(ucoe, cod, begin_lev)
+        wacc: float = calc_wacc(coe, cod, begin_lev, self.enterprise.stat_tax)
+
+        enterprise_value: float = self.project_enterprise_value()
+        debt_value: float = self.enterprise.debt_value
+
+        ending_lev: float = debt_value / enterprise_value
+
+        return ending_lev - begin_lev
+

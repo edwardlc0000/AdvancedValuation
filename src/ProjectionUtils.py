@@ -164,6 +164,18 @@ def calc_ucoe(rf: float,
     """
     return rf + beta_u * (rm - rf)
 
+def calc_coe(ucoe: float, cod: float, lev: float) -> float:
+    """
+
+    """
+    return ucoe + ((lev / (1 - lev)) * (ucoe - cod))
+
+def calc_wacc(coe: float, cod: float, lev: float, tax_rate: float):
+    """
+
+    """
+    return (coe * (1.0 - lev)) + (cod * (1.0 - tax_rate) * lev)
+
 def calc_reinvestment_rate(cap_ex: float,
                            d_and_a: float,
                            r_and_d: float,

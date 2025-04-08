@@ -100,6 +100,7 @@ class ProjectionEngine:
         self.ebitda_e: list[list]  = []
         self.da_e: list[list]  = []
         self.ebit_e: list[list]  = []
+        self.tax_e: list[list]  = []
         self.capex_e: list[list]  = []
         self.nppe_e: list[list]  = []
         self.change_nwc_e: list[list]  = []
@@ -132,13 +133,18 @@ class ProjectionEngine:
     def project_stmt(self) -> None:
         self.revenues_e.append(self.project_revenue())
         self.cogs_e.append(self.project_cogs())
+        self.gross_profit_e.append(self.project_gross_profit())
         self.sga_e.append(self.project_sga())
         self.r_and_d_e.append(self.project_r_and_d())
+        self.ebitda_e.append(self.project_ebitda())
         fixed_assets = self.project_fixed_assets()
         self.da_e.append(fixed_assets[0])
+        self.ebit_e.append(self.project_ebit())
+        self.tax_e.append(self.project_tax())
         self.capex_e.append(fixed_assets[1])
         self.nppe_e.append(fixed_assets[2])
         self.change_nwc_e.append(self.project_change_net_working_capital())
+        self.fcf_e.append(self.project_fcf())
 
     def project_revenue(self) -> list:
         iter_rev_e: list = []
@@ -220,3 +226,14 @@ class ProjectionEngine:
                              + np.array(self.da_e[-1])).tolist()
         return iter_ebit_e
 
+    def project_tax(self):
+        iter_tax_e: list = (np.array(self.ebit_e[-1]) * self.enterprise.stat_tax).tolist()
+        return iter_tax_e
+
+    def project_fcf(self) -> list:
+        iter_fcf_e: list = (np.array(self.ebit_e[-1])
+                            -np.array(self.tax_e[-1])
+                            +np.array(self.da_e)
+                            -np.array(self.capex_e)
+                            -np.array(self.change_nwc_e)).tolist()
+        return iter_fcf_e

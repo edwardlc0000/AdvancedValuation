@@ -94,12 +94,17 @@ class ProjectionEngine:
 
         self.revenues_e: list[list] = []
         self.cogs_e: list[list]  = []
+        self.gross_profit_e: list[list]  = []
         self.sga_e: list[list]  = []
         self.r_and_d_e: list[list]  = []
+        self.ebitda_e: list[list]  = []
         self.da_e: list[list]  = []
+        self.ebit_e: list[list]  = []
         self.capex_e: list[list]  = []
         self.nppe_e: list[list]  = []
         self.change_nwc_e: list[list]  = []
+        self.fcf_e: list[list]  = []
+        self.pv_fcf_e: list[list]  = []
 
     def calc_correlation(self) -> None:
         if (self.enterprise.income_statement.empty or
@@ -198,3 +203,20 @@ class ProjectionEngine:
             nwc0 = nwc
 
         return iter_change_nwc_e
+
+    def project_gross_profit(self) -> list:
+        iter_gross_profit_e: list = (np.array(self.revenues_e[-1])
+                                     - np.array(self.cogs_e[-1])).tolist()
+        return iter_gross_profit_e
+
+    def project_ebitda(self) -> list:
+        iter_ebitda_e: list = (np.array(self.gross_profit_e[-1])
+                               - np.array(self.sga_e[-1])
+                               - np.array(self.r_and_d_e[-1])).tolist()
+        return iter_ebitda_e
+
+    def project_ebit(self) -> list:
+        iter_ebit_e: list = (np.array(self.ebitda_e[-1])
+                             + np.array(self.da_e[-1])).tolist()
+        return iter_ebit_e
+
